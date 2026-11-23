@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "668432810028",
+    "project_id": "mafiawars-496c7",
+    "storage_bucket": "mafiawars-496c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:668432810028:android:672532bbe6735b4eb7d189",
+        "android_client_info": {
+          "package_name": "com.devruptors.mafiawars"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTNXRIF1IRcfjufQkx_JjnRHpD1gycG7U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
