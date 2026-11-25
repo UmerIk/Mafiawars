@@ -6,15 +6,16 @@ The current priority is implementing the new Figma UI. First, use this documenta
 
 ## Documentation
 
+- [Shared UI and first row](docs/DESIGN_SYSTEM.md): reusable components, assets, responsive layouts, and profile onboarding/editing.
 - [Current project status](docs/PROJECT_STATUS.md): what exists, what is incomplete, priorities, and verification results.
 - [Architecture and data](docs/ARCHITECTURE.md): modules, routes, rules, persistence, and service contracts.
 - [Figma UI implementation plan](docs/UI_IMPLEMENTATION_PLAN.md): preparation, screen mapping, sequence, and acceptance checks.
 
-Assessment date: **2026-11-25**. These documents describe inspected client code and local checks, not deployed Firebase/LiveKit health. Figma fidelity has not been assessed.
+Assessment date: **2026-11-25**. These documents describe inspected client code and local checks, not deployed Firebase/LiveKit health. The first-row UI has been compared visually with Chrome design references; exact effect/icon specifications and later rows remain pending. See the shared UI document for current behavior and limitations.
 
 ## Local development
 
-1. Install Flutter with Dart compatible with `pubspec.yaml` and its dependencies. Flutter 3.44.8 / Dart 3.12.2 passed all 32 tests with `google_fonts` 6.3.3. This font dependency requires at least Flutter 3.35 / Dart 3.9; an exact Flutter version is not pinned.
+1. Install Flutter with Dart compatible with `pubspec.yaml` and its dependencies. Flutter 3.44.8 / Dart 3.12.2 passed the original 32-test baseline with `google_fonts` 6.3.3. This font dependency requires at least Flutter 3.35 / Dart 3.9; an exact Flutter version is not pinned.
 2. Run `flutter pub get`.
 3. Configure Firebase for the intended environment. Android configuration exists at `android/app/google-services.json` (another copy exists at the root); verify the intended project. No Apple `GoogleService-Info.plist` or generated `firebase_options.dart` is present. Startup calls `Firebase.initializeApp()` without explicit options.
 4. For online features, enable anonymous Firebase Authentication, provide Firestore rules/indexes, and deploy or locate the `generateLiveKitToken` callable function. Its contract is documented in [Architecture](docs/ARCHITECTURE.md). Keep LiveKit signing credentials on the backend.

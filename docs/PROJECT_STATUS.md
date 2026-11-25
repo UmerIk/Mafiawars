@@ -8,6 +8,12 @@ Assessment date: **2026-11-25**. Based on source inspection and local checks. De
 
 This is an implemented Flutter client with substantial gameplay code and unfinished product integrations. It is ready for a scoped UI migration after establishing a compiling baseline, but production multiplayer readiness has not been demonstrated. Backend deployment sources and security rules are absent from this repository; they may exist elsewhere.
 
+## First-row UI update
+
+The first Figma row now has responsive splash/login, required name/avatar setup, the shared profile editor, dashboard, Agent Network and relationship/invitation dialogs. Shared assets, components, typography, colors, gradients and effects are documented in [Shared UI](DESIGN_SYSTEM.md). Backend repositories and models remain unchanged. The following original assessment records pre-migration behavior; consult the shared UI document for the changed screens.
+
+Current verification: all 57 tests pass, including 25 UI/flow checks. Analysis has no errors and retains 60 findings in legacy code; the edited UI files have no findings. Exact Figma effect/icon parity and real-device/backend checks remain outstanding.
+
 ## What we have
 
 | Area | Present in code | Limitation |
