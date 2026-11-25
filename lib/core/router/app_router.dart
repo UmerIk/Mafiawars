@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 import '../../features/audio/presentation/webrtc_test_screen.dart';
 import '../../features/auth/presentation/auth_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/auth/presentation/profile_setup_screen.dart';
+import '../../features/auth/domain/entities/user_entity.dart';
+import '../../features/auth/presentation/providers/profile_form_provider.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/lobby/presentation/lobby_screen.dart';
 import '../../features/game/presentation/game_screen.dart';
@@ -28,10 +28,17 @@ class RouterNotifier extends ChangeNotifier {
     _ref.listen(authStateChangesProvider, (_, __) {
       notifyListeners();
     });
+    _ref.listen(profileSetupPendingProvider, (_, __) {
+      notifyListeners();
+    });
   }
 }
 
-final routerNotifierProvider = Provider<RouterNotifier>((ref) => RouterNotifier(ref));
+final routerNotifierProvider = Provider<RouterNotifier>((ref) {
+  final notifier = RouterNotifier(ref);
+  ref.onDispose(notifier.dispose);
+  return notifier;
+});
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(routerNotifierProvider);
@@ -53,7 +60,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile_setup',
         name: 'profile_setup',
-        builder: (context, state) => const ProfileSetupScreen(),
+        builder: (context, state) => ProfileSetupScreen(
+            user: state.extra is UserEntity
+                ? state.extra as UserEntity
+                : ref.read(authStateChangesProvider).value,
+            isEditing: state.uri.queryParameters['edit'] == 'true'),
       ),
       GoRoute(
         path: '/lobby',
@@ -93,7 +104,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/in_person/config',
         name: 'in_person_config',
         builder: (context, state) {
-          final mode = (state.extra as InPersonGameMode?) ?? InPersonGameMode.fullDigital;
+          final mode = (state.extra as InPersonGameMode?) ??
+              InPersonGameMode.fullDigital;
           return InPersonConfigScreen(mode: mode);
         },
       ),
@@ -122,24 +134,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
     redirect: (context, state) {
-      try {
-        if (Firebase.apps.isEmpty) return null;
-        final user = FirebaseAuth.instance.currentUser;
-        final isSplashRoute = state.uri.path == '/splash';
-        final isAuthRoute = state.uri.path == '/';
-        final isInPersonRoute = state.uri.path.startsWith('/in_person');
-
-        if (isSplashRoute || isInPersonRoute) return null;
-
-        if (user == null && !isAuthRoute) {
-          return '/';
-        }
-        if (user != null && isAuthRoute) {
-          return '/lobby';
-        }
-      } catch (_) {
-        // Ignore during test initialization without firebase mock
+      final path = state.uri.path;
+      if (path == '/splash' || path.startsWith('/in_person')) return null;
+      final auth = ref.read(authStateChangesProvider);
+      final user = auth.value ?? ref.read(authRepositoryProvider).currentUser;
+      if (user == null) {
+        if (auth.isLoading) return null;
+        return path == '/' ? null : '/';
       }
+      final needsProfile = ref.read(profileSetupPendingProvider) ||
+          (auth.hasValue &&
+              auth.value != null &&
+              !hasCompletedProfile(auth.value!));
+      if (needsProfile && path != '/profile_setup') return '/profile_setup';
+      if (path == '/') return needsProfile ? '/profile_setup' : '/lobby';
       return null;
     },
   );
