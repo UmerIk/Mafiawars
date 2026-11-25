@@ -1,340 +1,146 @@
+// Created by Hamza Ali on 2026-11-25.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-import '../../auth/domain/entities/user_entity.dart';
+import '../../../core/widgets/design/design_components.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
-import '../../game/domain/entities/chat_message_entity.dart';
-import 'providers/social_providers.dart';
+import 'providers/chat_providers.dart';
+import 'widgets/direct_message_bubble.dart';
 
 class FriendChatScreen extends ConsumerStatefulWidget {
-  final String friendUid;
-  final String friendName;
-
-  const FriendChatScreen({
-    super.key,
-    required this.friendUid,
-    required this.friendName,
-  });
-
+  const FriendChatScreen(
+      {super.key, required this.friendUid, required this.friendName});
+  final String friendUid, friendName;
   @override
   ConsumerState<FriendChatScreen> createState() => _FriendChatScreenState();
 }
 
 class _FriendChatScreenState extends ConsumerState<FriendChatScreen> {
-  final TextEditingController _textController = TextEditingController();
+  final _text = TextEditingController();
+  final _scroll = ScrollController();
+  Future<void> _send() async {
+    final draft = _text.text;
+    final sent = await ref
+        .read(directMessageSenderProvider(widget.friendUid).notifier)
+        .send(draft);
+    if (!mounted || !sent) return;
+    // Keep anything typed while the previous message was being sent.
+    if (_text.text == draft) _text.clear();
+    if (_scroll.hasClients) {
+      _scroll.animateTo(0,
+          duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+    }
+  }
 
   @override
   void dispose() {
-    _textController.dispose();
+    _text.dispose();
+    _scroll.dispose();
     super.dispose();
-  }
-
-  Future<void> _sendMessage() async {
-    final text = _textController.text.trim();
-    if (text.isEmpty) return;
-
-    _textController.clear();
-    await ref.read(socialRepositoryProvider).sendDirectMessage(
-          friendUid: widget.friendUid,
-          message: text,
-        );
   }
 
   @override
   Widget build(BuildContext context) {
-    final socialRepo = ref.watch(socialRepositoryProvider);
-    final currentUser = ref.watch(authRepositoryProvider).currentUser;
-
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/images/bg_skyline.png',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF7D75D9),
-                      Color(0xFF43275A),
-                      Color(0xFF191024)
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned.fill(
-              child: Container(color: Colors.black.withOpacity(0.12))),
-          Container(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: () => context.pop(),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: const Color(0x8043275A),
-                              borderRadius: BorderRadius.circular(20),
-                              border:
-                                  Border.all(color: const Color(0xFF7DD6FC)),
-                            ),
-                            child: const Icon(
-                              Icons.arrow_back,
-                              color: Color(0xFFFEF0E6),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            widget.friendName,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFEF0E6),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        StreamBuilder<UserEntity?>(
-                          stream: socialRepo.getUserStream(widget.friendUid),
-                          builder: (context, snapshot) {
-                            final isOnline =
-                                snapshot.data?.userStatus == 'online';
-                            return Stack(
-                              children: [
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: const Color(0xFF43275A),
-                                    border: Border.all(
-                                        color: const Color(0xFF7DD6FC)),
-                                  ),
-                                  child: const Icon(Icons.person,
-                                      color: Colors.white),
-                                ),
-                                if (isOnline)
-                                  Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      width: 12,
-                                      height: 12,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF34C759),
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                            color: Colors.black, width: 2),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Date Divider
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: Colors.white24,
-                            margin: const EdgeInsets.only(left: 30, right: 12),
-                          ),
-                        ),
-                        const Text(
-                          'Today',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFEF0E6),
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: Colors.white24,
-                            margin: const EdgeInsets.only(left: 12, right: 30),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Messages Stream
-                  Expanded(
-                    child: StreamBuilder<List<ChatMessageEntity>>(
-                      stream: socialRepo.getDirectChatStream(widget.friendUid),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                                color: Color(0xFF7DD6FC)),
-                          );
-                        }
-
-                        final messages = snapshot.data ?? [];
-                        if (messages.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'No messages yet. Start the conversation!',
-                              style: TextStyle(color: Colors.white54),
-                            ),
-                          );
-                        }
-
-                        return ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                          itemCount: messages.length,
-                          itemBuilder: (context, idx) {
-                            final msg = messages[idx];
-                            final isMe = msg.senderId == currentUser?.uid;
-
-                            return Align(
-                              alignment: isMe
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: Container(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 280),
-                                margin: const EdgeInsets.symmetric(vertical: 6),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: isMe
-                                      ? const Color(0xFF689EEA)
-                                      : const Color(0xFFED77ED),
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: const Radius.circular(20),
-                                    topRight: const Radius.circular(20),
-                                    bottomLeft: isMe
-                                        ? const Radius.circular(20)
-                                        : Radius.zero,
-                                    bottomRight: isMe
-                                        ? Radius.zero
-                                        : const Radius.circular(20),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+    final messages = ref.watch(directMessagesProvider(widget.friendUid));
+    final friend = ref.watch(chatUserProvider(widget.friendUid));
+    final send = ref.watch(directMessageSenderProvider(widget.friendUid));
+    final uid = ref.watch(authRepositoryProvider).currentUser?.uid;
+    return MafiaPage(
+        scrollable: false,
+        padding: EdgeInsets.fromLTRB(
+            20, MediaQuery.viewInsetsOf(context).bottom > 0 ? 12 : 76, 20, 20),
+        child: Column(children: [
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: PageHeader(
+                  title: friend.valueOrNull?.displayName ?? widget.friendName,
+                  onBack: () =>
+                      context.canPop() ? context.pop() : context.go('/chats'),
+                  trailing: AgentAvatar(
+                      value: friend.valueOrNull?.avatarUrl ?? '',
+                      size: 60,
+                      online: friend.hasValue
+                          ? friend.valueOrNull?.userStatus != 'offline' &&
+                              friend.valueOrNull != null
+                          : null))),
+          if (friend.hasError)
+            TextButton(
+                onPressed: () =>
+                    ref.invalidate(chatUserProvider(widget.friendUid)),
+                child: const Text('Profile unavailable · Retry')),
+          const SizedBox(height: 28),
+          Expanded(
+              child: messages.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => AsyncFeedback(
+                      message: 'Could not load this conversation.',
+                      onRetry: () => ref.invalidate(
+                          directMessagesProvider(widget.friendUid))),
+                  data: (data) {
+                    if (data.isEmpty) {
+                      return const AsyncFeedback(
+                          message: 'No messages yet. Say hello!');
+                    }
+                    final sorted = [...data]..sort((a, b) {
+                        final order = a.timestamp.compareTo(b.timestamp);
+                        return order == 0 ? a.id.compareTo(b.id) : order;
+                      });
+                    return Align(
+                        alignment: Alignment.topCenter,
+                        child: ListView.builder(
+                            shrinkWrap: sorted.length < 20,
+                            controller: _scroll,
+                            reverse: true,
+                            padding: EdgeInsets.zero,
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            itemCount: sorted.length,
+                            itemBuilder: (context, reverseIndex) {
+                              final index = sorted.length - reverseIndex - 1;
+                              final message = sorted[index];
+                              final date = message.timestamp.toLocal();
+                              final previous = index > 0
+                                  ? sorted[index - 1].timestamp.toLocal()
+                                  : null;
+                              final newDay = previous == null ||
+                                  DateUtils.dateOnly(previous) !=
+                                      DateUtils.dateOnly(date);
+                              return Column(
+                                  key: ValueKey(message.id),
                                   children: [
-                                    Text(
-                                      msg.message,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        if (isMe) ...[
-                                          const Icon(
-                                            Icons.done_all,
-                                            size: 16,
-                                            color: Color(0xFFFEF0E6),
-                                          ),
-                                          const SizedBox(width: 4),
-                                        ],
-                                        const Text(
-                                          'Just now',
-                                          style: TextStyle(
-                                            color: Color(0xFFFEF0E6),
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-
-                  // Bottom Input Bar
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Container(
-                      height: 54,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF301C40),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: const Color(0xFF7DD6FC)),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black38,
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _textController,
-                              onSubmitted: (_) => _sendMessage(),
-                              style: const TextStyle(
-                                color: Color(0xFFFEF0E6),
-                                fontSize: 16,
-                              ),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                hintText: 'type here',
-                                hintStyle: TextStyle(color: Color(0xFF689EEA)),
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.send_rounded,
-                              color: Color(0xFF7DD6FC),
-                              size: 24,
-                            ),
-                            onPressed: _sendMessage,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+                                    if (newDay) ChatDateDivider(date: date),
+                                    DirectMessageBubble(
+                                        message: message,
+                                        isMine: message.senderId == uid)
+                                  ]);
+                            }));
+                  })),
+          if (send.hasError)
+            Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                    'Message could not be sent. Your draft is saved; try again.',
+                    style: AppTypography.uiCaption
+                        .copyWith(color: AppColors.figmaWhite))),
+          const SizedBox(height: 10),
+          AppTextField(
+              controller: _text,
+              hintText: 'type here',
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _send(),
+              suffixIcon: send.isLoading
+                  ? const Padding(
+                      padding: EdgeInsets.all(14),
+                      child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2)))
+                  : IconButton(
+                      tooltip: 'Send message',
+                      onPressed: _send,
+                      icon: const Icon(Icons.send_rounded,
+                          color: AppColors.figmaPink)))
+        ]));
   }
 }

@@ -14,6 +14,7 @@ import '../../features/game/presentation/game_screen.dart';
 import '../../features/social/presentation/social_screen.dart';
 import '../../features/social/presentation/friend_chat_screen.dart';
 import '../../features/social/presentation/new_chat_screen.dart';
+import '../../features/social/presentation/chats_list_screen.dart';
 import '../../features/in_person/domain/entities/in_person_game_config.dart';
 import '../../features/in_person/presentation/screens/in_person_select_screen.dart';
 import '../../features/in_person/presentation/screens/in_person_config_screen.dart';
@@ -75,6 +76,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/social',
         name: 'social',
         builder: (context, state) => const SocialScreen(),
+      ),
+      GoRoute(
+        path: '/chats',
+        name: 'chats',
+        builder: (context, state) => const ChatsListScreen(),
       ),
       GoRoute(
         path: '/new_chat',

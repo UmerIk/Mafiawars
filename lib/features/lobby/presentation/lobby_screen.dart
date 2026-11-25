@@ -143,7 +143,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                             AppIconButton(
                                 icon: Icons.chat_bubble_rounded,
                                 label: 'Messages',
-                                onPressed: () => context.push('/new_chat'))
+                                onPressed: () => context.push('/chats'))
                           ]),
                         ]),
                     const SizedBox(height: 30),
