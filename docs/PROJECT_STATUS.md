@@ -2,17 +2,23 @@
 
 # Current project status
 
-Assessment date: **2026-11-25**. Based on source inspection and local checks. Deployed services, real-device behavior, and Figma fidelity are unverified.
+Assessment date: **2026-11-25**. Based on source inspection and local checks. Deployed services and real-device behavior remain unverified. The four main Figma rows have been implemented and visually reviewed; exact pixel-diff certification remains pending.
 
 ## Where we are
 
 This is an implemented Flutter client with substantial gameplay code and unfinished product integrations. It is ready for a scoped UI migration after establishing a compiling baseline, but production multiplayer readiness has not been demonstrated. Backend deployment sources and security rules are absent from this repository; they may exist elsewhere.
 
-## First-row UI update
+## Four-row UI update
 
 The first Figma row now has responsive splash/login, required name/avatar setup, the shared profile editor, dashboard, Agent Network and relationship/invitation dialogs. Shared assets, components, typography, colors, gradients and effects are documented in [Shared UI](DESIGN_SYSTEM.md). Backend repositories and models remain unchanged. The following original assessment records pre-migration behavior; consult the shared UI document for the changed screens.
 
-Current verification: all 57 tests pass, including 25 UI/flow checks. Analysis has no errors and retains 60 findings in legacy code; the edited UI files have no findings. Exact Figma effect/icon parity and real-device/backend checks remain outstanding.
+The second row adds the conversation inbox, real-friend chat picker, direct chat, both room lobbies and a local briefing view over the existing game phase.
+
+The third row adds night targeting, role-specific waiting states and sunrise outcomes through one shared gameplay view. Backend logic and timing remain intact.
+
+The fourth row adds discussion, voting, observed final decisions and killed/eliminated-agent states. Original elimination overlays are exported and bundled.
+
+Current verification: all 94 tests pass, including 13 new fourth-row checks. The Android debug APK builds. Analysis has no errors and retains 52 findings in legacy code; the edited UI files have no findings. Exact Figma effect/icon parity and real-device/backend checks remain outstanding.
 
 ## What we have
 
@@ -25,11 +31,11 @@ Current verification: all 57 tests pass, including 25 UI/flow checks. Analysis h
 | Voice | LiveKit connection, mute, active speakers, test screen | External token function required; speakerphone action is boolean only |
 | Narration | Phase scripts, TTS, optional file/URL playback | No ElevenLabs API; no cache writer; local digital narration helper unused |
 | Social | Friend requests, accept/remove, search, direct text chat, invites/presence writes | Search bound suspect; presence incomplete; messages unbounded |
-| Incoming invites | Firestore records/listener | Sheet shows sample data; Join shows snackbar; Decline only closes it |
-| Dashboard | Styled lobby, avatar list, stats display | Fixed/sample content and fallback stats; no result-based stats update found |
+| Incoming invites | Live records, working join action, local decline | Backend consumption/decline endpoint absent |
+| Dashboard | First-row layout, live friends/profile, room entry and message inbox | No result-based stats update found |
 | In-person | Two modes, config, pass-reveal, local persistence | Configured roles ignored, night actions lost, duplicate names allowed |
-| Design | Shared theme/widgets, images, `Mafia Wars.fig` | Frame/state inventory and visual comparison pending |
-| Tests | 14 files for selected entities, controllers, rules, widgets, audio basics | No backend security/concurrency or full multiplayer end-to-end coverage |
+| Design | Shared tokens/widgets, four main Figma rows, Chrome visual review | Precise pixel comparison, independent overlays and device verification remain |
+| Tests | Rules, entities, controllers, audio basics, first/second-row widget coverage | No backend security/concurrency or full multiplayer end-to-end coverage |
 | Platforms | Mobile, desktop, web scaffolds | Working builds/support not established |
 
 ## What we need
@@ -74,6 +80,8 @@ Current verification: all 57 tests pass, including 25 UI/flow checks. Analysis h
 Release work need not all block visual implementation, but must remain explicit follow-up work.
 
 ## Verification baseline
+
+Current UI work adds the second-row checks described in `DESIGN_SYSTEM.md`. Older assessment results below are retained as historical context.
 
 Follow-up on 2026-11-25: `flutter test --no-pub --reporter expanded` passed all 32 tests after updating `google_fonts` to 6.3.3 on Flutter 3.44.8 / Dart 3.12.2. The table below records the earlier assessment, before this dependency fix.
 

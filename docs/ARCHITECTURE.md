@@ -44,7 +44,8 @@ At review time, the gameplay screen is about 1,444 lines and the lobby 981 lines
 | `/profile_setup` | Name and avatar selection |
 | `/lobby` | Dashboard and room entry |
 | `/social` | Friends, requests, search |
-| `/new_chat` | Direct-chat entry |
+| `/chats` | Current-friend conversation inbox derived from existing message streams |
+| `/new_chat` | Search actual friends to start a direct chat |
 | `/social/chat/:friendUid` | Friend chat; optional `name` query parameter |
 | `/game/:gameId` | Online room lobby, gameplay, results/rematch |
 | `/webrtc_test` | Manual voice connection diagnostic |
@@ -138,3 +139,11 @@ Configuration contains names, role counts/toggles, discussion/voting timing, and
 `core/theme/` centralizes colors, Cinzel/Inter typography through Google Fonts, spacing, radii, shadows, and the Material theme. Shared widgets include buttons, cards, badges, text fields, and `mafia_ui.dart` decoration. Hardcoded screen styles coexist with these tokens.
 
 Repository interfaces and Riverpod overrides provide test seams. Controller tests use fakes; entity/rule tests cover selected behavior, with injectable randomness in allocation. They do not verify backend authorization, concurrent room behavior, local notifier lifecycle, or real voice connectivity. See [Project status](PROJECT_STATUS.md) and [UI plan](UI_IMPLEMENTATION_PLAN.md).
+
+
+## Gameplay presentation states
+
+`NightGameView` presents the three existing night phases and a dismissible sunrise view during `dayDiscussion`. It shares phase headers, target chips, role sheets and voice/chat controls with the initial briefing. Night-action state is scoped by room/phase/deadline and delegates to the unchanged repository. Sunrise cards adapt recognized `nightFacts.summary` templates; unknown summaries remain text. No new phase, collection, field, role read, or server timer is introduced. After sunrise dismissal, `DayGameView` renders discussion and voting. Match completion/rematch retains the existing result screen. See `DESIGN_SYSTEM.md` for state behavior and tests.
+
+
+`DayGameView` calls the existing readiness/voting endpoints through phase-scoped presentation controllers. `lastVotingSnapshotProvider` caches observed votes until the room leaves `dayVoting`; `decisionFromTransition` uses the published eliminated-ID delta and that snapshot to produce an optional local `VoteDecision`. The decision never advances or pauses the server state machine. Vote records are deleted by the existing resolver, so replay and guaranteed post-reconnect totals require a future durable backend result record. Living/eliminated grids share `RoomPlayerTile` and `PlayerStateAvatar`; killed/jail overlays are original Figma assets. See `DESIGN_SYSTEM.md` for detailed states and limitations.

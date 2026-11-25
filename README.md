@@ -6,12 +6,12 @@ The current priority is implementing the new Figma UI. First, use this documenta
 
 ## Documentation
 
-- [Shared UI and first row](docs/DESIGN_SYSTEM.md): reusable components, assets, responsive layouts, and profile onboarding/editing.
+- [Shared UI and all four rows](docs/DESIGN_SYSTEM.md): reusable components, assets, responsive layouts, profiles, messages, room lobbies, briefing, and gameplay states.
 - [Current project status](docs/PROJECT_STATUS.md): what exists, what is incomplete, priorities, and verification results.
 - [Architecture and data](docs/ARCHITECTURE.md): modules, routes, rules, persistence, and service contracts.
 - [Figma UI implementation plan](docs/UI_IMPLEMENTATION_PLAN.md): preparation, screen mapping, sequence, and acceptance checks.
 
-Assessment date: **2026-11-25**. These documents describe inspected client code and local checks, not deployed Firebase/LiveKit health. The first-row UI has been compared visually with Chrome design references; exact effect/icon specifications and later rows remain pending. See the shared UI document for current behavior and limitations.
+Assessment date: **2026-11-25**. These documents describe inspected client code and local checks, not deployed Firebase/LiveKit health. All four main Figma rows have been implemented and visually reviewed through Chrome. Exact pixel-diff certification and remaining overlay/platform polish are documented as follow-ups. See the shared UI document for current behavior and limitations.
 
 ## Local development
 
@@ -46,7 +46,7 @@ lib/features/social/    Friends, requests, direct messages, invites, presence
 lib/features/in_person/ Local setup, role reveal, game and moderator modes
 assets/images/          Logo, backgrounds, characters, avatars, unnamed assets
 test/                   Unit and widget tests
-Mafia Wars.fig          Local design archive; frame inventory still needed
+Mafia Wars.fig          Local design archive; live Figma references documented in docs/
 ```
 
 Android, iOS, macOS, Windows, Linux, and web scaffolds exist. This does not establish that every platform builds or supports every integration. Release branding, signing, App Check, platform setup, and backend authorization still need verification.

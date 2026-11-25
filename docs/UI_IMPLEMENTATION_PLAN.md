@@ -2,7 +2,7 @@
 
 # Figma UI implementation plan
 
-Prepared on 2026-11-25 from current code. This is a proposed migration sequence, not a completed design audit. `Mafia Wars.fig` is present; frame inventory and visual comparison remain pending.
+Prepared on 2026-11-25 from current code. All four main Figma rows are implemented in presentation code. The live UI/UX and Components pages were rechecked through Chrome before each screen group. See `DESIGN_SYSTEM.md` for scope, frame references, data boundaries and verification. Exact pixel-diff certification and documented integration/overlay follow-ups remain pending.
 
 ## Approach
 
