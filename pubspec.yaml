@@ -20,7 +20,7 @@ dependencies:
   firebase_storage: ^12.2.1
   firebase_messaging: ^15.1.3
   firebase_app_check: ^0.3.2+8
-  google_fonts: ^6.2.1
+  google_fonts: ^6.3.3
   just_audio: ^0.9.36
   flutter_tts: ^4.0.2
   livekit_client: ^2.0.0
@@ -36,3 +36,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+  fonts:
+    - family: MafiaInter
+      fonts:
+        - asset: assets/fonts/Inter.ttf

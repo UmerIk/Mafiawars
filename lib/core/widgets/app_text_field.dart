@@ -1,105 +1,99 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_effects.dart';
+import '../theme/app_gradients.dart';
+import '../theme/app_typography.dart';
+import 'design/app_surface.dart';
 
-/// Reusable input field component matching exact Figma Mafia-Wars specifications.
 class AppTextField extends StatelessWidget {
+  const AppTextField(
+      {super.key,
+      this.controller,
+      this.labelText,
+      this.hintText,
+      this.errorText,
+      this.prefixIcon,
+      this.suffixIcon,
+      this.obscureText = false,
+      this.keyboardType = TextInputType.text,
+      this.onChanged,
+      this.enabled = true,
+      this.onSubmitted,
+      this.textInputAction,
+      this.inputFormatters,
+      this.maxLength,
+      this.autofillHints,
+      this.focusNode});
   final TextEditingController? controller;
-  final String? labelText;
-  final String? hintText;
-  final String? errorText;
-  final Widget? prefixIcon;
-  final Widget? suffixIcon;
-  final bool obscureText;
+  final String? labelText, hintText, errorText;
+  final Widget? prefixIcon, suffixIcon;
+  final bool obscureText, enabled;
   final TextInputType keyboardType;
-  final ValueChanged<String>? onChanged;
-  final bool enabled;
-
-  const AppTextField({
-    super.key,
-    this.controller,
-    this.labelText,
-    this.hintText,
-    this.errorText,
-    this.prefixIcon,
-    this.suffixIcon,
-    this.obscureText = false,
-    this.keyboardType = TextInputType.text,
-    this.onChanged,
-    this.enabled = true,
-  });
+  final ValueChanged<String>? onChanged, onSubmitted;
+  final TextInputAction? textInputAction;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
+  final Iterable<String>? autofillHints;
+  final FocusNode? focusNode;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (labelText != null) ...[
-          Text(
-            labelText!,
-            style: const TextStyle(
-              color: AppColors.figmaWhite,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
-            ),
-          ),
-          const SizedBox(height: 6),
-        ],
-        Container(
-          height: 54,
-          decoration: BoxDecoration(
-            color: AppColors.figmaTextFieldBg,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: errorText != null ? AppColors.error : AppColors.figmaCyan,
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: Offset(0, 4),
-              ),
+  Widget build(BuildContext context) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (labelText != null) ...[
+              Text(labelText!,
+                  textAlign: TextAlign.center, style: AppTypography.uiCaption),
+              const SizedBox(height: 8)
             ],
-          ),
-          child: TextField(
-            controller: controller,
-            enabled: enabled,
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            onChanged: onChanged,
-            style: const TextStyle(
-              color: AppColors.figmaWhite,
-              fontSize: 16,
-            ),
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: const TextStyle(
-                color: AppColors.figmaBlue,
-                fontSize: 16,
-              ),
-              prefixIcon: prefixIcon,
-              suffixIcon: suffixIcon,
-              border: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 14,
-              ),
-            ),
-          ),
-        ),
-        if (errorText != null) ...[
-          const SizedBox(height: 4),
-          Text(
-            errorText!,
-            style: const TextStyle(color: AppColors.error, fontSize: 12),
-          ),
-        ],
-      ],
-    );
-  }
+            AppSurface(
+                radius: 30,
+                shadows: const [],
+                gradient: const LinearGradient(colors: [
+                  AppColors.figmaTextFieldBg,
+                  AppColors.figmaTextFieldBg
+                ]),
+                borderGradient: errorText == null
+                    ? AppGradients.neon
+                    : const LinearGradient(
+                        colors: [AppColors.error, AppColors.error]),
+                child: DecoratedBox(
+                    decoration: const BoxDecoration(
+                        gradient: AppEffects.fieldInnerShadow),
+                    child: TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        enabled: enabled,
+                        obscureText: obscureText,
+                        keyboardType: keyboardType,
+                        onChanged: onChanged,
+                        onSubmitted: onSubmitted,
+                        textInputAction: textInputAction,
+                        inputFormatters: inputFormatters,
+                        maxLength: maxLength,
+                        autofillHints: autofillHints,
+                        style: AppTypography.uiBody,
+                        decoration: InputDecoration(
+                            hintText: hintText,
+                            hintStyle: AppTypography.uiBody
+                                .copyWith(color: AppColors.figmaBlue),
+                            prefixIcon: prefixIcon,
+                            suffixIcon: suffixIcon,
+                            counterText: '',
+                            filled: false,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 17),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none)))),
+            if (errorText != null)
+              Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(errorText!,
+                      style: AppTypography.uiCaption
+                          .copyWith(color: AppColors.error))),
+          ]);
 }

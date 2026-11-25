@@ -6,6 +6,17 @@ import 'app_colors.dart';
 class AppTypography {
   AppTypography._();
 
+  // Bundled Inter makes the Figma UI deterministic and available offline.
+  static const TextStyle uiTitle = TextStyle(
+      fontFamily: 'MafiaInter',
+      fontSize: 24,
+      fontWeight: FontWeight.w700,
+      color: AppColors.figmaWhite);
+  static const TextStyle uiBody = TextStyle(
+      fontFamily: 'MafiaInter', fontSize: 16, color: AppColors.figmaWhite);
+  static const TextStyle uiCaption = TextStyle(
+      fontFamily: 'MafiaInter', fontSize: 12, color: AppColors.figmaWhite);
+
   // --- Display & Headers (Cinzel) ---
   static TextStyle displayLarge = GoogleFonts.cinzel(
     fontSize: 32,

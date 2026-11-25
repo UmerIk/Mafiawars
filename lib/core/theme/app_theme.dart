@@ -52,7 +52,7 @@ class AppTheme {
         centerTitle: true,
         titleTextStyle: AppTypography.titleLarge,
       ),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         color: AppColors.surface,
         shape: AppRadii.shapeL,
         elevation: 2,
