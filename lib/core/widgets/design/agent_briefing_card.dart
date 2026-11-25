@@ -32,7 +32,8 @@ class AgentBriefingCard extends StatelessWidget {
                 onPressed: onFlip,
                 size: 44)),
         AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
+            duration:
+                revealed ? const Duration(milliseconds: 220) : Duration.zero,
             child: revealed
                 ? KeyedSubtree(key: const ValueKey('role'), child: roleCard)
                 : Column(
@@ -49,11 +50,25 @@ class AgentBriefingCard extends StatelessWidget {
                                 fontSize: 42, color: AppColors.figmaPink)),
                         const Text('Agents', style: AppTypography.uiBody),
                         const SizedBox(height: 20),
-                        ...counts.map((item) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            child: Text('${item.count} ${item.label}',
-                                style: AppTypography.uiBody
-                                    .copyWith(color: item.color))))
+                        ...counts.map((item) => Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.symmetric(vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 12),
+                            decoration: BoxDecoration(
+                                color: AppColors.figmaSecondaryBurgundy,
+                                borderRadius: BorderRadius.circular(30)),
+                            child: Text.rich(
+                                TextSpan(children: [
+                                  TextSpan(
+                                      text: '${item.count} ',
+                                      style: TextStyle(
+                                          color: item.color,
+                                          fontWeight: FontWeight.w700)),
+                                  TextSpan(text: item.label)
+                                ]),
+                                textAlign: TextAlign.center,
+                                style: AppTypography.uiBody)))
                       ])),
       ]));
 }

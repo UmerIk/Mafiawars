@@ -16,8 +16,17 @@ class AgentChip extends StatelessWidget {
       this.selected = false,
       this.enabled = true,
       this.color = AppColors.figmaPink,
+      this.avatarSize = 36,
+      this.fontSize = 12,
+      this.selectedIcon,
+      this.selectedMarker,
+      this.borderGradient = AppGradients.neon,
       this.voters = const []});
   final String name, avatar;
+  final double avatarSize, fontSize;
+  final IconData? selectedIcon;
+  final Widget? selectedMarker;
+  final Gradient borderGradient;
   final VoidCallback? onTap;
   final bool selected, enabled;
   final Color color;
@@ -35,10 +44,10 @@ class AgentChip extends StatelessWidget {
               onTap: enabled ? onTap : null,
               borderGradient: selected
                   ? LinearGradient(colors: [color, color])
-                  : AppGradients.neon,
+                  : borderGradient,
               borderWidth: selected ? 2 : 1,
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                AgentAvatar(value: avatar, size: 36),
+                AgentAvatar(value: avatar, size: avatarSize),
                 const SizedBox(width: 6),
                 Flexible(
                     child: Column(
@@ -46,7 +55,13 @@ class AgentChip extends StatelessWidget {
                         children: [
                       Text(name,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTypography.uiCaption),
+                          maxLines: 1,
+                          style: AppTypography.uiCaption
+                              .copyWith(fontSize: fontSize, height: 1.2)),
+                      if (selected &&
+                          (selectedMarker != null || selectedIcon != null))
+                        selectedMarker ??
+                            Icon(selectedIcon, color: color, size: 20),
                       if (voters.isNotEmpty)
                         Wrap(
                             children: voters

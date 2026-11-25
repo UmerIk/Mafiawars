@@ -2,6 +2,13 @@
 /// Original Figma assets. Older descriptive filenames in the project were
 /// assigned to unrelated artwork; use this catalog instead of those aliases.
 abstract final class AppAssets {
+  // Twemoji graphics, CC BY 4.0; attribution and license in assets/licenses/.
+  static const actionKnife = 'assets/images/action_knife.png';
+  static const actionStethoscope = 'assets/images/action_stethoscope.png';
+  static const actionSearch = 'assets/images/action_search.png';
+  static const actionSyringe = 'assets/images/action_syringe.png';
+  static const eliminationBlood = 'assets/images/elimination_blood.png';
+  static const eliminationJail = 'assets/images/elimination_jail.png';
   static const background = 'assets/images/bg_skyline.png';
   static const logo = 'assets/images/mafia_wars_logo.png';
   static const characters = 'assets/images/login_characters.png';
@@ -14,6 +21,8 @@ abstract final class AppAssets {
       'assets/images/cd33c0515bb930b903caf42d4052da9beb170409';
   static const inPerson =
       'assets/images/c9c43a001f94212ee7daebf473212798db09260b';
+  static const civilian =
+      'assets/images/a2096dcbd98a73cb4fbc398a7e1a4491077a4ef4';
   static const mafia = 'assets/images/3b5c76a4d251af2df4dbc8c52f6781a18859e597';
   static const doctor =
       'assets/images/4294836414bf65d8f88144c92807076a544369dc';

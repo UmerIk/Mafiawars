@@ -1,0 +1,8 @@
+Twemoji graphics by Twitter, Inc. and other contributors.
+Source: https://github.com/twitter/twemoji
+License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+https://creativecommons.org/licenses/by/4.0/
+Full license: TWEMOJI_LICENSE_GRAPHICS.txt
+
+Unmodified 72x72 PNG assets used: knife (1f52a), stethoscope (1fa7a),
+magnifying glass tilted right (1f50e), syringe (1f489).

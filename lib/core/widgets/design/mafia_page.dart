@@ -11,11 +11,13 @@ class MafiaPage extends StatelessWidget {
       required this.child,
       this.scrollable = true,
       this.padding = const EdgeInsets.fromLTRB(30, 80, 30, 32),
-      this.background = true});
+      this.background = true,
+      this.backgroundOverlay});
   final Widget child;
   final bool scrollable;
   final EdgeInsets padding;
   final bool background;
+  final Widget? backgroundOverlay;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -26,6 +28,8 @@ class MafiaPage extends StatelessWidget {
                 fit: BoxFit.cover,
                 alignment: Alignment.topCenter,
                 excludeFromSemantics: true),
+          if (backgroundOverlay != null)
+            IgnorePointer(child: backgroundOverlay!),
           SafeArea(child: LayoutBuilder(builder: (context, constraints) {
             final scale = (constraints.maxWidth / 440).clamp(.8, 1.15);
             final content = Center(

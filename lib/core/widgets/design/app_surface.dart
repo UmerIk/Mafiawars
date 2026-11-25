@@ -52,6 +52,7 @@ class _GradientStroke extends CustomPainter {
   final double width;
   @override
   void paint(Canvas canvas, Size size) {
+    if (width <= 0) return;
     final rect = (Offset.zero & size).deflate(width / 2);
     canvas.drawRRect(
         RRect.fromRectAndRadius(rect, Radius.circular(radius)),

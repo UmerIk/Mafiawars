@@ -60,7 +60,7 @@ class AgentAvatar extends StatelessWidget {
                               : null),
                       child: Padding(
                           padding: EdgeInsets.all(selected ? 2 : 0),
-                          child: image))),
+                          child: ClipOval(child: image)))),
               if (online != null)
                 Positioned(
                     right: 1,

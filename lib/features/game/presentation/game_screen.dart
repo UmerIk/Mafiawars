@@ -12,6 +12,13 @@ import '../../social/presentation/widgets/invite_friends_dialog.dart';
 import '../data/models/game_room_model.dart';
 import '../domain/entities/game_room_entity.dart';
 import 'providers/game_providers.dart';
+import 'providers/briefing_providers.dart';
+import 'providers/night_action_provider.dart';
+import 'widgets/night_game_view.dart';
+import 'widgets/day_game_view.dart';
+import 'providers/day_game_provider.dart';
+import 'widgets/room_lobby_view.dart';
+import 'widgets/room_briefing_view.dart';
 import 'widgets/animated_unread_badge.dart';
 import 'widgets/floating_audio_controls.dart';
 import 'widgets/game_chat_drawer.dart';
@@ -420,6 +427,28 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     ref.listen<AsyncValue<GameRoomEntity?>>(
       activeRoomStreamProvider(widget.gameId),
       (prev, next) {
+        if (next.valueOrNull?.status == GameRoomStatus.lobby &&
+            prev?.valueOrNull?.status != GameRoomStatus.lobby) {
+          ref.read(briefingDismissedProvider(widget.gameId).notifier).state =
+              false;
+        }
+        final previousRoom = prev?.valueOrNull;
+        final nextRoom = next.valueOrNull;
+        if (previousRoom != null && nextRoom != null) {
+          final decision = decisionFromTransition(previousRoom, nextRoom,
+              ref.read(lastVotingSnapshotProvider(widget.gameId)));
+          if (decision != null) {
+            ref.read(voteDecisionProvider(widget.gameId).notifier).state =
+                decision;
+          }
+          if (nextRoom.phase == GamePhase.dayVoting &&
+                  previousRoom.phase != GamePhase.dayVoting ||
+              nextRoom.status == GameRoomStatus.lobby) {
+            ref.read(lastVotingSnapshotProvider(widget.gameId).notifier).state =
+                const {};
+            ref.read(voteDecisionProvider(widget.gameId).notifier).state = null;
+          }
+        }
         final prevPhase = prev?.value?.phase;
         final nextPhase = next.value?.phase;
         if (nextPhase != null && prevPhase != nextPhase) {
@@ -432,6 +461,36 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       },
     );
 
+    ref.listen<AsyncValue<Map<String, String>>>(
+        roomVotesStreamProvider(widget.gameId), (_, next) {
+      if (ref
+                  .read(activeRoomStreamProvider(widget.gameId))
+                  .valueOrNull
+                  ?.phase ==
+              GamePhase.dayVoting &&
+          next.valueOrNull?.isNotEmpty == true) {
+        ref.read(lastVotingSnapshotProvider(widget.gameId).notifier).state =
+            Map.of(next.valueOrNull!);
+      }
+    });
+
+    ref.listen<AsyncValue<List<RoomPlayerEntity>>>(
+        roomPlayersStreamProvider(widget.gameId), (previous, next) {
+      final uid = ref.read(authRepositoryProvider).currentUser?.uid;
+      final player =
+          next.valueOrNull?.where((p) => p.userId == uid).firstOrNull;
+      if (player?.isAlive == false) {
+        Future.microtask(() async {
+          if (!mounted) return;
+          final audio = ref.read(liveKitAudioServiceProvider);
+          if (audio.isConnected && !audio.isMuted) {
+            await audio.setMicrophoneEnabled(false);
+          }
+        });
+      }
+    });
+
+    ref.watch(lastVotingSnapshotProvider(widget.gameId));
     final roomAsync = ref.watch(activeRoomStreamProvider(widget.gameId));
     final playersAsync = ref.watch(roomPlayersStreamProvider(widget.gameId));
     final myRoleAsync = ref.watch(myRoleStreamProvider(widget.gameId));
@@ -455,6 +514,138 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
     // Dynamically update chat subscriptions based on myRole and isAlive
     _updateChatSubscriptions(myRole, isAlive);
+
+    final room = roomAsync.valueOrNull;
+    final action = ref.watch(gameControllerProvider);
+    final briefingSession = widget.gameId;
+    final briefingDismissed =
+        ref.watch(briefingDismissedProvider(briefingSession));
+    if (room?.status == GameRoomStatus.lobby) {
+      return RoomLobbyView(
+          room: room!,
+          players: playersAsync,
+          currentUid: currentUser?.uid,
+          action: action,
+          unreadCount: _unreadChatCount,
+          onLeave: _leaveRoom,
+          onCopy: () => _copyCode(room.code),
+          onInvite: () => _showInviteFriendsSheet(room),
+          onChat: () => _openMultiChannelChatDrawer(myRole, isAlive),
+          onStart: () => ref
+              .read(gameControllerProvider.notifier)
+              .startGame(widget.gameId),
+          onReady: () => ref
+              .read(gameControllerProvider.notifier)
+              .toggleReadyStatus(widget.gameId),
+          onRetry: () =>
+              ref.invalidate(roomPlayersStreamProvider(widget.gameId)),
+          onPlayerTap: (player) => _showPlayerActionDialog(player, null));
+    }
+    final voteDecision = ref.watch(voteDecisionProvider(widget.gameId));
+    if (room != null &&
+        (voteDecision != null ||
+            (room.status == GameRoomStatus.inGame &&
+                (room.phase == GamePhase.dayVoting ||
+                    (room.phase == GamePhase.dayDiscussion &&
+                        ref.watch(sunriseDismissedProvider((
+                          roomId: widget.gameId,
+                          phase: room.phase,
+                          deadline: room.phaseEndTime
+                        )))))))) {
+      return DayGameView(
+          room: room,
+          players: playersAsync,
+          votes: votesAsync,
+          currentUid: currentUser?.uid,
+          speakers: activeSpeakerIds,
+          seconds: room.phaseEndTime
+                  ?.difference(DateTime.now())
+                  .inSeconds
+                  .clamp(0, 86400) ??
+              0,
+          decision: voteDecision,
+          actionFailed: action.hasError,
+          onDismissDecision: () => ref
+              .read(voteDecisionProvider(widget.gameId).notifier)
+              .state = null,
+          onLeave: _leaveRoom,
+          onChat: () => _openMultiChannelChatDrawer(myRole, isAlive),
+          unreadCount: _unreadChatCount,
+          onRetryPlayers: () =>
+              ref.invalidate(roomPlayersStreamProvider(widget.gameId)),
+          onPlayerTap: (player) => _showPlayerActionDialog(player, null),
+          onAdvance: room.hostId == currentUser?.uid &&
+                  !action.isLoading &&
+                  voteDecision == null
+              ? () => ref
+                  .read(gameControllerProvider.notifier)
+                  .advanceGamePhase(widget.gameId)
+              : null);
+    }
+
+    // Presentation only: starting the game still enters the existing night phase.
+    // Dismissal lasts for this visit; returning to the lobby resets it.
+    if (room?.status == GameRoomStatus.inGame &&
+        room?.phase == GamePhase.nightMafia &&
+        !briefingDismissed) {
+      return RoomBriefingView(
+          room: room!,
+          players: playersAsync,
+          currentUid: currentUser?.uid,
+          speakers: activeSpeakerIds,
+          seconds: room.phaseEndTime
+                  ?.difference(DateTime.now())
+                  .inSeconds
+                  .clamp(0, 86400) ??
+              0,
+          unreadCount: _unreadChatCount,
+          onLeave: _leaveRoom,
+          onChat: () => _openMultiChannelChatDrawer(myRole, isAlive),
+          onContinue: () => ref
+              .read(briefingDismissedProvider(briefingSession).notifier)
+              .state = true,
+          onRetry: () =>
+              ref.invalidate(roomPlayersStreamProvider(widget.gameId)));
+    }
+
+    final phaseSession = (
+      roomId: widget.gameId,
+      phase: room?.phase ?? GamePhase.lobby,
+      deadline: room?.phaseEndTime
+    );
+    final sunriseDismissed = ref.watch(sunriseDismissedProvider(phaseSession));
+    final isNight = room?.phase == GamePhase.nightMafia ||
+        room?.phase == GamePhase.nightDoctor ||
+        room?.phase == GamePhase.nightDetective;
+    if (room?.status == GameRoomStatus.inGame &&
+        (isNight ||
+            (room?.phase == GamePhase.dayDiscussion && !sunriseDismissed))) {
+      return NightGameView(
+          room: room!,
+          players: playersAsync,
+          role: myRoleAsync,
+          actions: actionsAsync,
+          currentUid: currentUser?.uid,
+          speakers: activeSpeakerIds,
+          seconds: room.phaseEndTime
+                  ?.difference(DateTime.now())
+                  .inSeconds
+                  .clamp(0, 86400) ??
+              0,
+          unreadCount: _unreadChatCount,
+          onLeave: _leaveRoom,
+          onChat: () => _openMultiChannelChatDrawer(myRole, isAlive),
+          onRetryPlayers: () =>
+              ref.invalidate(roomPlayersStreamProvider(widget.gameId)),
+          onContinue: () => ref
+              .read(sunriseDismissedProvider(phaseSession).notifier)
+              .state = true,
+          onAdvance: room.hostId == currentUser?.uid && !action.isLoading
+              ? () => ref
+                  .read(gameControllerProvider.notifier)
+                  .advanceGamePhase(widget.gameId)
+              : null);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -505,11 +696,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
                 ],
               ),
             );
-          }
-
-          if (room.status == GameRoomStatus.lobby) {
-            return _buildLobbyView(
-                context, ref, room, playersAsync, currentUser);
           }
 
           if (room.status == GameRoomStatus.completed ||
@@ -939,283 +1125,6 @@ class _GameScreenState extends ConsumerState<GameScreen> {
       default:
         return 'LOBBY';
     }
-  }
-
-  Widget _buildLobbyView(
-      BuildContext context,
-      WidgetRef ref,
-      GameRoomEntity room,
-      AsyncValue<List<RoomPlayerEntity>> playersAsync,
-      dynamic currentUser) {
-    return playersAsync.when(
-      data: (players) {
-        final isHost = room.hostId == currentUser?.uid;
-        final myPlayer = players.cast<RoomPlayerEntity?>().firstWhere(
-              (p) => p?.userId == currentUser?.uid,
-              orElse: () => null,
-            );
-
-        return Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF689EEA), Color(0x8043275A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(22),
-                  border:
-                      Border.all(color: const Color(0xFF7DD6FC), width: 1.5),
-                  boxShadow: const [
-                    BoxShadow(
-                        color: Colors.black38,
-                        blurRadius: 12,
-                        offset: Offset(0, 6)),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('ROOM CODE',
-                            style: GoogleFonts.inter(
-                                fontSize: 10,
-                                color: Colors.white54,
-                                letterSpacing: 1.5)),
-                        Text(
-                          room.code,
-                          style: GoogleFonts.cinzel(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFFFF1E56),
-                            letterSpacing: 4,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text('${players.length}/${room.maxPlayers}',
-                            style: GoogleFonts.inter(
-                                fontSize: 14, color: Colors.white70)),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.copy, color: Colors.white70),
-                          onPressed: () => _copyCode(room.code),
-                          tooltip: 'Copy Room Code',
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // INVITE FRIENDS BUTTON (AVAILABLE TO ALL PLAYERS)
-              SizedBox(
-                width: double.infinity,
-                height: 58,
-                child: OutlinedButton.icon(
-                  onPressed: () => _showInviteFriendsSheet(room),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFFEF0E6),
-                    backgroundColor: const Color(0x80689EEA),
-                    side:
-                        const BorderSide(color: Color(0xFF7DD6FC), width: 1.5),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18)),
-                  ),
-                  icon: const Icon(Icons.person_add_alt_1, size: 24),
-                  label: const Text('Invite Friends',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 0.85,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: room.maxPlayers,
-                  itemBuilder: (context, index) {
-                    final player = players.cast<RoomPlayerEntity?>().firstWhere(
-                          (p) => p?.slotIndex == index,
-                          orElse: () => null,
-                        );
-
-                    if (player == null) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0x8043275A).withOpacity(0.55),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                              color: const Color(0xFF7DD6FC).withOpacity(0.55)),
-                        ),
-                        child: Center(
-                          child: Text('Slot ${index + 1}',
-                              style: GoogleFonts.inter(
-                                  color: Colors.white24, fontSize: 12)),
-                        ),
-                      );
-                    }
-
-                    return GestureDetector(
-                      onTap: () => _showPlayerActionDialog(player, null),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: player.isReady
-                                ? const [Color(0xFF7DD6FC), Color(0x80689EEA)]
-                                : const [Color(0x8043275A), Color(0x80301C40)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: player.isReady
-                                ? const Color(0xFF7DD6FC)
-                                : const Color(0xFFED77ED).withOpacity(0.5),
-                            width: 1.5,
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                CircleAvatar(
-                                  radius: 24,
-                                  backgroundColor: const Color(0xFFC70039),
-                                  backgroundImage: player.avatarUrl.isNotEmpty
-                                      ? NetworkImage(player.avatarUrl)
-                                      : null,
-                                  child: player.avatarUrl.isEmpty
-                                      ? const Icon(Icons.person,
-                                          color: Colors.white)
-                                      : null,
-                                ),
-                                if (player.isHost)
-                                  const Positioned(
-                                    top: 0,
-                                    right: 0,
-                                    child: CircleAvatar(
-                                      radius: 10,
-                                      backgroundColor: Colors.amber,
-                                      child: Icon(Icons.star,
-                                          size: 12, color: Colors.black),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              player.displayName,
-                              style: GoogleFonts.cinzel(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: player.isReady
-                                    ? Colors.green.withOpacity(0.2)
-                                    : Colors.orange.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                player.isReady ? 'READY' : 'WAITING',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: player.isReady
-                                      ? Colors.greenAccent
-                                      : Colors.orangeAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (isHost)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => ref
-                        .read(gameControllerProvider.notifier)
-                        .startGame(widget.gameId),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFED77ED),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18)),
-                    ),
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('START GAME'),
-                  ),
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => ref
-                        .read(gameControllerProvider.notifier)
-                        .toggleReadyStatus(widget.gameId),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: myPlayer?.isReady == true
-                          ? const Color(0xFF689EEA)
-                          : const Color(0x8043275A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        side: const BorderSide(
-                            color: Color(0xFF7DD6FC), width: 1.5),
-                      ),
-                    ),
-                    icon: Icon(myPlayer?.isReady == true
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked),
-                    label: Text(myPlayer?.isReady == true
-                        ? 'I AM READY'
-                        : 'MARK READY'),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-      loading: () => const Center(
-          child: CircularProgressIndicator(color: Color(0xFFFF1E56))),
-      error: (err, _) => Center(
-          child: Text('Error loading players: $err',
-              style: const TextStyle(color: Colors.redAccent))),
-    );
   }
 
   Widget _buildGameOverView(BuildContext context, GameRoomEntity room,
