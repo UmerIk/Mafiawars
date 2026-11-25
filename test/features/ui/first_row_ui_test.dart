@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:my_flutter_app/core/design/app_assets.dart';
+import 'package:my_flutter_app/core/router/app_router.dart';
 import 'package:my_flutter_app/features/auth/domain/entities/user_entity.dart';
 import 'package:my_flutter_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:my_flutter_app/features/auth/presentation/auth_screen.dart';
@@ -21,6 +22,8 @@ import 'package:my_flutter_app/features/social/domain/entities/friend_request_en
 import 'package:my_flutter_app/features/social/domain/repositories/social_repository.dart';
 import 'package:my_flutter_app/features/social/presentation/providers/social_providers.dart';
 import 'package:my_flutter_app/features/social/presentation/social_screen.dart';
+import 'package:my_flutter_app/features/social/presentation/widgets/invite_friends_dialog.dart';
+import 'package:my_flutter_app/features/social/presentation/widgets/user_profile_dialog.dart';
 
 class _Auth extends Fake implements AuthRepository {
   UserEntity user = UserEntity(
@@ -36,6 +39,8 @@ class _Auth extends Fake implements AuthRepository {
   @override
   Stream<UserEntity?> get authStateChanges => Stream.value(user);
   @override
+  Future<UserEntity?> getUserProfile(String uid) async => user;
+  @override
   Future<void> updateProfile(
       {required String displayName, required String avatarUrl}) async {
     saves++;
@@ -46,6 +51,17 @@ class _Auth extends Fake implements AuthRepository {
 }
 
 class _Social extends Fake implements SocialRepository {
+  int invitesSent = 0;
+  bool failInvite = false;
+  @override
+  Future<void> sendGameInvite(
+      {required String friendUid,
+      required String roomCode,
+      required String roomId}) async {
+    invitesSent++;
+    if (failInvite) throw Exception('offline');
+  }
+
   @override
   Stream<List<Map<String, dynamic>>> getGameInvitesStream() => Stream.value([]);
   @override
@@ -71,7 +87,8 @@ final _friends = List.generate(
 Future<GlobalKey> _pump(WidgetTester tester, Widget screen, _Auth auth,
     {Size size = const Size(440, 956),
     double textScale = 1,
-    bool useRouter = false}) async {
+    bool useRouter = false,
+    _Social? social}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
@@ -90,7 +107,7 @@ Future<GlobalKey> _pump(WidgetTester tester, Widget screen, _Auth auth,
   await tester.pumpWidget(ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(auth),
-        socialRepositoryProvider.overrideWithValue(_Social()),
+        socialRepositoryProvider.overrideWithValue(social ?? _Social()),
         friendsStreamProvider.overrideWith((ref) => Stream.value(_friends)),
         pendingRequestsStreamProvider
             .overrideWith((ref) => Stream.value(<FriendRequestEntity>[])),
@@ -250,6 +267,135 @@ void main() {
     await _pump(tester, const SocialScreen(), _Auth(),
         size: const Size(320, 640), textScale: 1.5);
     expect(tester.takeException(), isNull);
+  });
+
+  for (final type in ProfileDialogType.values) {
+    testWidgets('profile dialog ${type.name} fits a small phone',
+        (tester) async {
+      final boundary = await _pump(
+          tester,
+          Scaffold(
+              body: Center(
+                  child: Dialog(
+                      backgroundColor: Colors.transparent,
+                      child: SingleChildScrollView(
+                          child: UserProfileDialog(
+                              displayName: 'Rayven',
+                              avatarUrl: 'avatar_11',
+                              type: type,
+                              onPrimaryAction: () {},
+                              onSecondaryAction: () {}))))),
+          _Auth(),
+          size: const Size(320, 640),
+          textScale: 1.5);
+      expect(tester.takeException(), isNull);
+      await _preview(tester, boundary, 'dialog_${type.name}_320');
+    });
+  }
+
+  testWidgets('friend invitations search real friends and mark sent once',
+      (tester) async {
+    final social = _Social();
+    await _pump(
+        tester,
+        const Scaffold(
+            body: Center(
+                child: Dialog(
+                    backgroundColor: Colors.transparent,
+                    child: InviteFriendsDialog(
+                        roomId: 'room', roomCode: 'ABC123')))),
+        _Auth(),
+        social: social);
+    await tester.enterText(find.byType(TextField), 'rayven');
+    await tester.pump();
+    expect(find.text('Rayven'), findsOneWidget);
+    expect(find.text('AgentX'), findsNothing);
+    await tester.tap(find.text('Invite'));
+    await tester.pumpAndSettle();
+    expect(find.text('Invited'), findsOneWidget);
+    await tester.tap(find.text('Invited'));
+    await tester.pumpAndSettle();
+    expect(social.invitesSent, 1);
+  });
+
+  testWidgets('failed invitation stays available for retry', (tester) async {
+    final social = _Social()..failInvite = true;
+    await _pump(
+        tester,
+        const Scaffold(
+            body: Center(
+                child: Dialog(
+                    backgroundColor: Colors.transparent,
+                    child: InviteFriendsDialog(
+                        roomId: 'room', roomCode: 'ABC123')))),
+        _Auth(),
+        social: social);
+    await tester.enterText(find.byType(TextField), 'rayven');
+    await tester.pump();
+    await tester.tap(find.text('Invite'));
+    await tester.pumpAndSettle();
+    expect(find.text('Couldn’t send the invitation. Please try again.'),
+        findsOneWidget);
+    expect(find.text('Invite'), findsOneWidget);
+    social.failInvite = false;
+    await tester.tap(find.text('Invite'));
+    await tester.pumpAndSettle();
+    expect(social.invitesSent, 2);
+    expect(find.text('Invited'), findsOneWidget);
+  });
+
+  testWidgets('larger text fits login and dashboard on a small phone',
+      (tester) async {
+    await _pump(tester, const AuthScreen(), _Auth(),
+        size: const Size(320, 640), textScale: 1.5);
+    expect(tester.takeException(), isNull);
+    await _pump(tester, const LobbyScreen(), _Auth(),
+        size: const Size(320, 640), textScale: 1.5);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a pending profile blocks direct lobby navigation',
+      (tester) async {
+    final auth = _Auth()
+      ..user = UserEntity(
+          uid: 'self',
+          displayName: 'Agent_self',
+          avatarUrl: '',
+          createdAt: DateTime(2026));
+    tester.view.physicalSize = const Size(440, 956);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final container = ProviderContainer(
+        overrides: [authRepositoryProvider.overrideWithValue(auth)]);
+    addTearDown(container.dispose);
+    final router = container.read(routerProvider);
+    await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child:
+            MaterialApp.router(routerConfig: router, theme: ThemeData.dark())));
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    router.go('/lobby');
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    expect(router.routeInformationProvider.value.uri.path, '/profile_setup');
+  });
+
+  testWidgets('profile save ignores repeat taps while pending', (tester) async {
+    final auth = _Auth()..saveGate = Completer<void>();
+    await _pump(tester, const ProfileSetupScreen(), auth, useRouter: true);
+    await tester.enterText(find.byType(TextField), 'Hamza');
+    await tester.ensureVisible(find.text('Continue'));
+    await tester.tap(find.text('Continue'));
+    await tester.pump();
+    await tester.tap(find.byType(CircularProgressIndicator));
+    await tester.pump();
+    expect(auth.saves, 1);
+    auth.saveGate!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Saved dashboard'), findsOneWidget);
   });
 
   test(

@@ -4,7 +4,7 @@ import '../theme/app_gradients.dart';
 import '../theme/app_typography.dart';
 import 'design/app_surface.dart';
 
-enum AppButtonVariant { primary, secondary, outlined, danger }
+enum AppButtonVariant { primary, secondary, outlined, danger, success }
 
 /// Figma button variants with optional leading/trailing content and busy states.
 class AppButton extends StatelessWidget {
@@ -45,6 +45,10 @@ class AppButton extends StatelessWidget {
             AppButtonVariant.primary => AppGradients.button,
             AppButtonVariant.danger =>
               const LinearGradient(colors: [AppColors.error, AppColors.error]),
+            AppButtonVariant.success => const LinearGradient(colors: [
+                AppColors.figmaPaletteGreen,
+                AppColors.figmaPaletteGreen
+              ]),
             AppButtonVariant.outlined => const LinearGradient(
                 colors: [Colors.transparent, Colors.transparent]),
             AppButtonVariant.secondary => AppGradients.burgundy,

@@ -93,9 +93,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           child: AgentAvatar(
               value: draft.avatar, size: 100, label: 'Selected avatar')),
       const SizedBox(height: 8),
-      Text('Select your avatar',
+      const Text('Select your avatar',
           textAlign: TextAlign.center, style: AppTypography.uiCaption),
-      const SizedBox(height: 20),
+      const SizedBox(height: 12),
       LayoutBuilder(builder: (context, constraints) {
         final gap = constraints.maxWidth * .025;
         return GridView.builder(
@@ -123,7 +123,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                               draft.avatar == AppAssets.avatarId(index))));
             });
       }),
-      const SizedBox(height: 22),
+      const SizedBox(height: 14),
       AppTextField(
           controller: _nameController,
           labelText: 'Choose your codename',

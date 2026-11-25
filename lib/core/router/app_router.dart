@@ -43,7 +43,7 @@ final routerNotifierProvider = Provider<RouterNotifier>((ref) {
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(routerNotifierProvider);
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: '/splash',
     refreshListenable: notifier,
     routes: [
@@ -151,4 +151,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
   );
+  ref.onDispose(router.dispose);
+  return router;
 });

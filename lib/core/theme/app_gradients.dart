@@ -17,7 +17,7 @@ abstract final class AppGradients {
   static const burgundy = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xCC43275A), Color(0xCC301C40)],
+    colors: [Color(0x8043275A), Color(0x8043275A)],
   );
   static const profile = LinearGradient(
     begin: Alignment.topLeft,

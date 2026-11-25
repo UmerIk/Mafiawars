@@ -83,8 +83,9 @@ class AppTextField extends StatelessWidget {
                             counterText: '',
                             filled: false,
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 17),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: prefixIcon == null ? 12 : 20,
+                                vertical: 17),
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,

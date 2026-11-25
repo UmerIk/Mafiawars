@@ -101,16 +101,17 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
     final user = ref.watch(authStateChangesProvider);
     final game = ref.watch(gameControllerProvider);
     ref.listen(gameControllerProvider, (_, next) {
-      if (next.hasError)
+      if (next.hasError) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content:
                 Text(next.error.toString().replaceFirst('Exception: ', ''))));
+      }
     });
     return MafiaPage(
         child: user.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => Column(children: [
-                  Text('Couldn’t load your profile.',
+                  const Text('Couldn’t load your profile.',
                       style: AppTypography.uiBody),
                   TextButton(
                       onPressed: () => ref.invalidate(authStateChangesProvider),
@@ -142,7 +143,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                             AppIconButton(
                                 icon: Icons.chat_bubble_rounded,
                                 label: 'Messages',
-                                onPressed: () => context.push('/social'))
+                                onPressed: () => context.push('/new_chat'))
                           ]),
                         ]),
                     const SizedBox(height: 30),
@@ -218,7 +219,7 @@ class _NetworkPreview extends ConsumerWidget {
               height: 65,
               child: friends.when(
                   data: (items) => items.isEmpty
-                      ? Align(
+                      ? const Align(
                           alignment: Alignment.centerLeft,
                           child: Text('Find your fellow agents',
                               style: AppTypography.uiCaption))
@@ -245,7 +246,7 @@ class _NetworkPreview extends ConsumerWidget {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2))),
-                  error: (_, __) => Text('Open your network',
+                  error: (_, __) => const Text('Open your network',
                       style: AppTypography.uiCaption))),
           const SizedBox(height: 8),
           Row(children: [

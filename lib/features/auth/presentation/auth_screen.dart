@@ -48,7 +48,7 @@ class AuthScreen extends ConsumerWidget {
                             AppTypography.uiTitle.copyWith(fontSize: titleSize),
                         textAlign: TextAlign.center),
                     const SizedBox(height: 3),
-                    Text('Time to take new assignments',
+                    const Text('Time to take new assignments',
                         style: AppTypography.uiCaption),
                     SizedBox(height: 24 * scale),
                     Padding(

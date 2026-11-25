@@ -52,13 +52,15 @@ class SocialViewController extends StateNotifier<SocialViewState> {
     _debounce = Timer(const Duration(milliseconds: 300), () async {
       try {
         final results = await repository.searchUsers(query.trim());
-        if (mounted && generation == _generation)
+        if (mounted && generation == _generation) {
           state = state.copyWith(searching: false, results: results);
+        }
       } catch (_) {
-        if (mounted && generation == _generation)
+        if (mounted && generation == _generation) {
           state = state.copyWith(
               searching: false,
               error: 'Couldn’t search agents. Please try again.');
+        }
       }
     });
   }

@@ -30,8 +30,9 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   Future<void> _action(Future<void> Function() action,
       {VoidCallback? success}) async {
     await action();
-    if (mounted && !ref.read(socialControllerProvider).hasError)
+    if (mounted && !ref.read(socialControllerProvider).hasError) {
       success?.call();
+    }
   }
 
   void _profile(
@@ -80,9 +81,10 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     final friends = ref.watch(friendsStreamProvider);
     final requests = ref.watch(pendingRequestsStreamProvider);
     ref.listen(socialControllerProvider, (_, next) {
-      if (next.hasError)
+      if (next.hasError) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Couldn’t complete that action. Please try again.')));
+      }
     });
     return MafiaPage(
         child:

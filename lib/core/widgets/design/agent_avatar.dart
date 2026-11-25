@@ -54,6 +54,7 @@ class AgentAvatar extends StatelessWidget {
                   child: DecoratedBox(
                       decoration: BoxDecoration(
                           shape: BoxShape.circle,
+                          color: AppColors.figmaSecondaryBurgundy,
                           border: selected
                               ? Border.all(color: AppColors.figmaCyan, width: 2)
                               : null),

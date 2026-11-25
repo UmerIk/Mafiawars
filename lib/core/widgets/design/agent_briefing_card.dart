@@ -47,7 +47,7 @@ class AgentBriefingCard extends StatelessWidget {
                                 .padLeft(2, '0'),
                             style: AppTypography.uiTitle.copyWith(
                                 fontSize: 42, color: AppColors.figmaPink)),
-                        Text('Agents', style: AppTypography.uiBody),
+                        const Text('Agents', style: AppTypography.uiBody),
                         const SizedBox(height: 20),
                         ...counts.map((item) => Padding(
                             padding: const EdgeInsets.symmetric(vertical: 10),

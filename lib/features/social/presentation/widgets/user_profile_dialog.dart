@@ -97,6 +97,7 @@ class UserProfileDialog extends StatelessWidget {
             Expanded(
                 child: AppButton(
                     text: 'Accept',
+                    variant: AppButtonVariant.success,
                     onPressed: onPrimaryAction == null
                         ? null
                         : () {

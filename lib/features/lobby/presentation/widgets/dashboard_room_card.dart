@@ -17,36 +17,41 @@ class DashboardRoomCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget? child;
   @override
-  Widget build(BuildContext context) => AppSurface(
-      onTap: onTap,
-      radius: 20,
-      child: Row(children: [
-        if (!artworkOnRight) _art(),
-        Expanded(
-            child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(title,
-                          style: AppTypography.uiTitle.copyWith(fontSize: 23),
-                          textAlign: TextAlign.center),
-                      const SizedBox(height: 5),
-                      Text(subtitle,
-                          style: AppTypography.uiCaption,
-                          textAlign: TextAlign.center),
-                      if (child != null) ...[
-                        const SizedBox(height: 10),
-                        child!
-                      ],
-                    ]))),
-        if (artworkOnRight) _art(),
-      ]));
-  Widget _art() => LayoutBuilder(
-      builder: (context, constraints) => Image.asset(artwork,
-          width: 130,
-          height: child == null ? 100 : 130,
-          fit: BoxFit.contain,
-          excludeFromSemantics: true));
+  Widget build(BuildContext context) =>
+      LayoutBuilder(builder: (context, constraints) {
+        final artworkWidth = (constraints.maxWidth * .34).clamp(80.0, 130.0);
+        final titleSize = (constraints.maxWidth / 380 * 23).clamp(18.0, 23.0);
+        final artworkWidget = Image.asset(artwork,
+            width: artworkWidth,
+            height: child == null ? artworkWidth * 96 / 139 : artworkWidth,
+            fit: BoxFit.contain,
+            excludeFromSemantics: true);
+        return AppSurface(
+            onTap: onTap,
+            radius: 20,
+            child: Row(children: [
+              if (!artworkOnRight) artworkWidget,
+              Expanded(
+                  child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(title,
+                                style: AppTypography.uiTitle
+                                    .copyWith(fontSize: titleSize),
+                                textAlign: TextAlign.center),
+                            const SizedBox(height: 5),
+                            Text(subtitle,
+                                style: AppTypography.uiCaption,
+                                textAlign: TextAlign.center),
+                            if (child != null) ...[
+                              const SizedBox(height: 10),
+                              child!
+                            ],
+                          ]))),
+              if (artworkOnRight) artworkWidget,
+            ]));
+      });
 }

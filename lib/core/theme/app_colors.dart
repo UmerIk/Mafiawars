@@ -25,6 +25,12 @@ class AppColors {
   static const Color figmaDisabledFg = Color(0xFF4F5D70);
   static const Color figmaGreen = Color(0xFF34C759);
 
+  // Additional named swatches from the Figma component palette.
+  static const Color figmaPaletteGreen = Color(0xFF54CC54);
+  static const Color figmaYellow = Color(0xFFFFCC33);
+  static const Color figmaPurple = Color(0xFF44398D);
+  static const Color figmaSecondaryBurgundy = Color(0x8043275A);
+
   // --- Semantic Tokens ---
   static const Color background = obsidianBlack;
   static const Color surface = darkSlate;
