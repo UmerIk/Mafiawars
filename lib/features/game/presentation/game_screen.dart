@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../audio/providers/audio_providers.dart';
 import '../../auth/presentation/providers/auth_providers.dart';
 import '../../social/presentation/providers/social_providers.dart';
+import '../../social/presentation/widgets/invite_friends_dialog.dart';
 import '../data/models/game_room_model.dart';
 import '../domain/entities/game_room_entity.dart';
 import 'providers/game_providers.dart';
@@ -376,102 +377,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   void _showInviteFriendsSheet(GameRoomEntity room) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1F2833),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Consumer(
-        builder: (context, ref, child) {
-          final friendsAsync = ref.watch(friendsStreamProvider);
-
-          return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'INVITE FRIENDS TO ROOM',
-                  style: GoogleFonts.cinzel(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: friendsAsync.when(
-                    data: (friends) {
-                      if (friends.isEmpty) {
-                        return const Center(
-                          child: Text('No friends added yet.',
-                              style: TextStyle(color: Colors.white54)),
-                        );
-                      }
-                      return ListView.builder(
-                        itemCount: friends.length,
-                        itemBuilder: (context, idx) {
-                          final f = friends[idx];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: const Color(0xFFC70039),
-                              backgroundImage: f.avatarUrl.isNotEmpty
-                                  ? NetworkImage(f.avatarUrl)
-                                  : null,
-                              child: f.avatarUrl.isEmpty
-                                  ? const Icon(Icons.person,
-                                      color: Colors.white)
-                                  : null,
-                            ),
-                            title: Text(f.displayName,
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold)),
-                            subtitle: const Text('Online',
-                                style: TextStyle(
-                                    color: Colors.greenAccent, fontSize: 12)),
-                            trailing: ElevatedButton(
-                              onPressed: () async {
-                                await ref
-                                    .read(socialRepositoryProvider)
-                                    .sendGameInvite(
-                                      friendUid: f.uid,
-                                      roomCode: room.code,
-                                      roomId: room.roomId,
-                                    );
-                                if (ctx.mounted) {
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                    SnackBar(
-                                        content: Text(
-                                            'Invite sent to ${f.displayName}!')),
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFF1E56)),
-                              child: const Text('INVITE'),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    loading: () => const Center(
-                        child: CircularProgressIndicator(
-                            color: Color(0xFFFF1E56))),
-                    error: (err, _) => Center(
-                        child: Text('Error: $err',
-                            style: const TextStyle(color: Colors.redAccent))),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
+    InviteFriendsDialog.show(context, roomId: room.roomId, roomCode: room.code);
   }
 
   Future<void> _handleTargetAction(

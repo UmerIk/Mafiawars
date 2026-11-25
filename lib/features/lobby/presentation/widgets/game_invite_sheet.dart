@@ -33,11 +33,12 @@ class GameInviteSheet extends ConsumerWidget {
               final visible = items
                   .where((item) => !dismissed.contains(item['id']))
                   .toList();
-              if (visible.isEmpty)
-                return Padding(
-                    padding: const EdgeInsets.all(24),
+              if (visible.isEmpty) {
+                return const Padding(
+                    padding: EdgeInsets.all(24),
                     child: Text('No active invitations.',
                         style: AppTypography.uiBody));
+              }
               return ListView.separated(
                   shrinkWrap: true,
                   itemCount: visible.length,
@@ -95,8 +96,8 @@ class GameInviteSheet extends ConsumerWidget {
                                           })),
                           ]),
                           if (game.hasError)
-                            Padding(
-                                padding: const EdgeInsets.only(top: 10),
+                            const Padding(
+                                padding: EdgeInsets.only(top: 10),
                                 child: Text(
                                     'Couldn’t join this room. Please try again.',
                                     style: AppTypography.uiCaption)),
@@ -107,7 +108,7 @@ class GameInviteSheet extends ConsumerWidget {
                 padding: EdgeInsets.all(30),
                 child: CircularProgressIndicator()),
             error: (_, __) => Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text('Couldn’t load invitations.',
+                  const Text('Couldn’t load invitations.',
                       style: AppTypography.uiBody),
                   TextButton(
                       onPressed: () => ref.invalidate(_invitesProvider),
