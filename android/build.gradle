@@ -1,3 +1,5 @@
+ext.kotlin_version = '2.3.0'
+
 allprojects {
     repositories {
         google()
@@ -20,6 +22,12 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+    if (project.name in ["flutter_webrtc", "livekit_client"]) {
+        afterEvaluate {
+            // Keep the voice plugin dependency chain on the app's Android API level.
+            android.compileSdk = project(":app").android.compileSdk
+        }
+    }
 }
 
 tasks.register("clean", Delete) {
